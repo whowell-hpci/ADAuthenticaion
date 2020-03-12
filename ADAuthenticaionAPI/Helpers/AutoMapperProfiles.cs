@@ -1,4 +1,5 @@
-﻿using ADAuthenticaionAPI.Data.DTOs;
+﻿using ADAuthenticaionAPI.Data;
+using ADAuthenticaionAPI.Data.DTOs;
 using ADAuthenticaionAPI.Models;
 using AutoMapper;
 using System;
@@ -14,6 +15,7 @@ namespace ADAuthenticaionAPI.Helpers
         {
             CreateMap<User, UserForReturnDto>();
             CreateMap<UserForRegistrationDto, User>();
+            CreateMap<UserForLoginDto, UserForReturnDto>();
         }
     }
 }

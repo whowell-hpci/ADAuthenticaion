@@ -13,21 +13,22 @@ namespace ADAuthenticaionAPI.Repositories
 {
     public class AuthRepository : IAuthRepository
     {
-        private readonly DataContext _context;
+        //private readonly DataContext _context;
 
-        public AuthRepository(DataContext context)
-        {
-            _context = context;
-        }
+        //public AuthRepository(DataContext context)
+        //{
+        //    _context = context;
+        //}
 
-        public async Task<User> Login(string username, string password)
+        public async Task<UserForLoginDto> Login(string username, string password)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.username == username);
+            var user = new UserForLoginDto
+            {
+                Username = username,
+                Password = password
+            };
 
             if (user == null)
-                return null;
-
-            if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                 return null;
 
             return user;
@@ -49,19 +50,19 @@ namespace ADAuthenticaionAPI.Repositories
             
         }
 
-        public async Task<User> Register(User user, string password)
-        {
-            byte[] passwordHash, passwordSalt;
-            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+        //public async Task<User> Register(User user, string password)
+        //{
+        //    byte[] passwordHash, passwordSalt;
+        //    CreatePasswordHash(password, out passwordHash, out passwordSalt);
 
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+        //    user.PasswordHash = passwordHash;
+        //    user.PasswordSalt = passwordSalt;
 
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
+        //    await _context.Users.AddAsync(user);
+        //    await _context.SaveChangesAsync();
 
-            return user;
-        }
+        //    return user;
+        //}
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
@@ -72,15 +73,15 @@ namespace ADAuthenticaionAPI.Repositories
             }
         }
 
-        public async Task<bool> UserExists(string username)
-        {
-            if (await _context.Users.AnyAsync(u => u.username == username))
-            {
-                return true;
-            }
+        //public async Task<bool> UserExists(string username)
+        //{
+        //    if (await _context.Users.AnyAsync(u => u.username == username))
+        //    {
+        //        return true;
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         public bool IsADUser(string domain, string user, string password)
         {

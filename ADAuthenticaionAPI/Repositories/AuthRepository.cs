@@ -3,6 +3,7 @@ using ADAuthenticaionAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.DirectoryServices.AccountManagement;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -79,6 +80,19 @@ namespace ADAuthenticaionAPI.Repositories
             }
 
             return false;
+        }
+
+        public bool IsADUser(string domain, string user, string password)
+        {
+            bool isValid = false;
+
+            using (var pc = new PrincipalContext(ContextType.Domain, "HPCI"))
+            {
+                isValid = pc.ValidateCredentials(user, password);
+                
+            }
+
+            return isValid;
         }
     }
 }

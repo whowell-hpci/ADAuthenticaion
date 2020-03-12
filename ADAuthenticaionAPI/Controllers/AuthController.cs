@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
+using ADAuthenticaionAPI.Data;
 using ADAuthenticaionAPI.Data.DTOs;
 using ADAuthenticaionAPI.Models;
 using ADAuthenticaionAPI.Repositories;
@@ -9,6 +13,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ADAuthenticaionAPI.Controllers
 {
@@ -28,25 +33,65 @@ namespace ADAuthenticaionAPI.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserForRegistrationDto userForRegistrationDto)
+        //public async Task<IActionResult> Register(UserForRegistrationDto userForRegistrationDto)
+        //{
+        //    // Reqeust Validated through DTO and [APIController]
+
+        //    userForRegistrationDto.Username = userForRegistrationDto.Username.ToLower();
+
+        //    if (await _repo.UserExists(userForRegistrationDto.Username))
+        //    {
+        //        return BadRequest("Username already exists");
+        //    }
+
+        //    //Automapper to map the DTO back to the User object
+        //    var userToCreate = _mapper.Map<User>(userForRegistrationDto);
+
+        //    var createdUser = await _repo.Register(userToCreate, userForRegistrationDto.Password);
+
+        //    var userToReturn = _mapper.Map<UserForReturnDto>(createdUser);
+
+        //    return Ok(userToReturn);
+
+        //}
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
-            // Reqeust Validated through DTO and [APIController]
+            var userValidated = _repo.IsADUser("hpci", userForLoginDto.Username, userForLoginDto.Password);
+            var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
 
-            userForRegistrationDto.Username = userForRegistrationDto.Username.ToLower();
+            if (!userValidated)
+                return Unauthorized("AD Authorization Error");
 
-            if (await _repo.UserExists(userForRegistrationDto.Username))
+            if (userFromRepo == null)
+                return Unauthorized();
+
+            var claims = new[]
             {
-                return BadRequest("Username already exists");
-            }
+                new Claim(ClaimTypes.NameIdentifier, userFromRepo.Id.ToString()),
+                new Claim(ClaimTypes.Name, userFromRepo.username)
+            };
 
-            var userToCreate = _mapper.Map<User>(userForRegistrationDto);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-            var createdUser = await _repo.Register(userToCreate, userForRegistrationDto.Password);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
+            };
 
-            var userToReturn = _mapper.Map<UserForReturnDto>(createdUser);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var user = _mapper.Map<UserForReturnDto>(userFromRepo);
 
-            return Ok(userToReturn);
-
+            return Ok(new
+            {
+                token = tokenHandler.WriteToken(token),
+                user
+            });
         }
     }
 }

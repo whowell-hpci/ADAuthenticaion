@@ -32,7 +32,9 @@ namespace ADAuthenticaionAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost("register")]
+
+        #region Test User Registration ##### DISABLED unless new test user needed ####
+        //[HttpPost("register")]
         //public async Task<IActionResult> Register(UserForRegistrationDto userForRegistrationDto)
         //{
         //    // Reqeust Validated through DTO and [APIController]
@@ -54,23 +56,20 @@ namespace ADAuthenticaionAPI.Controllers
         //    return Ok(userToReturn);
 
         //}
+        #endregion
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
             var userValidated = _repo.IsADUser("hpci", userForLoginDto.Username, userForLoginDto.Password);
-            var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
 
             if (!userValidated)
                 return Unauthorized("AD Authorization Error");
 
-            if (userFromRepo == null)
-                return Unauthorized();
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, userFromRepo.Id.ToString()),
-                new Claim(ClaimTypes.Name, userFromRepo.username)
+                new Claim(ClaimTypes.Name, userForLoginDto.Username)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value));
@@ -85,7 +84,7 @@ namespace ADAuthenticaionAPI.Controllers
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            var user = _mapper.Map<UserForReturnDto>(userFromRepo);
+            var user = _mapper.Map<UserForReturnDto>(userForLoginDto);
 
             return Ok(new
             {

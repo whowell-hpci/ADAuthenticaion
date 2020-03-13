@@ -2,10 +2,6 @@
 using ADAuthenticaionAPI.Data.DTOs;
 using ADAuthenticaionAPI.Models;
 using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ADAuthenticaionAPI.Helpers
 {
